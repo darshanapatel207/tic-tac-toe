@@ -7,8 +7,8 @@ class Board:
         self.user2 = user2
         self.lastMove = ""
         self.numGames = 1
-        self.wins = {"X": 0, "O": 0}
-        self.loss = {"X": 0, "O": 0}
+        self.wins = {"O": 0, "X": 0}
+        self.loss = {"O": 0, "X": 0}
         self.ties = 0
 
 
@@ -20,10 +20,10 @@ class Board:
 
     def playMoveOnBoard(self,position,player):
         if player == "player2":
-            self.board[position] = "O"
+            self.board[position] = "X"
             self.lastMove = "player2"
         else:
-            self.board[position] = "X"
+            self.board[position] = "O"
             self.lastMove = self.user2
 
     def isBoardFull(self):
@@ -47,17 +47,12 @@ class Board:
         b8 = self.board[7]
         b9 = self.board[8]
 
-        if (b1==b2 and b1==b3 and b1=="O") or (b4==b5 and b4==b6 and b4=="O") or (b7==b8 and b7==b9 and b7=="O"):
-            finish = True
-            won = "O"
-            self.wins["O"] = self.wins["O"] + 1
-            self.loss["X"] = self.loss["X"] + 1
-        elif (b1==b2 and b1==b3 and b1=="X") or (b4==b5 and b4==b6 and b4=="X") or (b7==b8 and b7==b9 and b7=="X"):
+        if (b1==b2 and b1==b3 and b1=="X") or (b4==b5 and b4==b6 and b4=="X") or (b7==b8 and b7==b9 and b7=="X"):
             finish = True
             won = "X"
             self.wins["X"] = self.wins["X"] + 1
             self.loss["O"] = self.loss["O"] + 1
-        elif (b1==b4 and b1==b7 and b1=="O") or (b2==b5 and b2==b8 and b2=="O") or (b3==b6 and b3==b9 and b3=="O"):
+        elif (b1==b2 and b1==b3 and b1=="O") or (b4==b5 and b4==b6 and b4=="O") or (b7==b8 and b7==b9 and b7=="O"):
             finish = True
             won = "O"
             self.wins["O"] = self.wins["O"] + 1
@@ -67,7 +62,7 @@ class Board:
             won = "X"
             self.wins["X"] = self.wins["X"] + 1
             self.loss["O"] = self.loss["O"] + 1
-        elif (b1==b5 and b1==b9 and b1=="O") or (b7==b5 and b7==b3 and b7=="O"):
+        elif (b1==b4 and b1==b7 and b1=="O") or (b2==b5 and b2==b8 and b2=="O") or (b3==b6 and b3==b9 and b3=="O"):
             finish = True
             won = "O"
             self.wins["O"] = self.wins["O"] + 1
@@ -77,6 +72,11 @@ class Board:
             won = "X"
             self.wins["X"] = self.wins["X"] + 1
             self.loss["O"] = self.loss["O"] + 1
+        elif (b1==b5 and b1==b9 and b1=="O") or (b7==b5 and b7==b3 and b7=="O"):
+            finish = True
+            won = "O"
+            self.wins["O"] = self.wins["O"] + 1
+            self.loss["X"] = self.loss["X"] + 1
         elif self.isBoardFull():
             finish = True
             self.ties = self.ties + 1

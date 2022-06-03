@@ -141,7 +141,7 @@ def clicked1():
     global finish,board
     if start and user and btn1["text"]==" ":   #For getting the text of a button
         if board.lastMove == player1:
-            btn1["text"]="O"
+            btn1["text"]="X"
             board.lastMove = "player2"
             sendData = '{}-{}'.format("0",board.lastMove).encode()
             clientSocket.send(sendData)
@@ -154,7 +154,7 @@ def clicked2():
     global finish,board
     if start and user and btn2["text"]==" ":   #For getting the text of a button
         if board.lastMove == player1:
-            btn2["text"]="O"
+            btn2["text"]="X"
             board.lastMove = "player2"
             sendData = '{}-{}'.format("1",board.lastMove).encode()
             clientSocket.send(sendData)
@@ -167,7 +167,7 @@ def clicked3():
     global finish,board
     if start and user and btn3["text"]==" ":   #For getting the text of a button
         if board.lastMove == player1:
-            btn3["text"]="O"
+            btn3["text"]="X"
             board.lastMove = "player2"
             sendData = '{}-{}'.format("2",board.lastMove).encode()
             clientSocket.send(sendData)
@@ -180,7 +180,7 @@ def clicked4():
     global finish,board
     if start and user and btn4["text"]==" ":   #For getting the text of a button
         if board.lastMove == player1:
-            btn4["text"]="O"
+            btn4["text"]="X"
             board.lastMove = "player2"
             sendData = '{}-{}'.format("3",board.lastMove).encode()
             clientSocket.send(sendData)
@@ -193,7 +193,7 @@ def clicked5():
     global finish,board
     if start and user and btn5["text"]==" ":   #For getting the text of a button
         if board.lastMove == player1:
-            btn5["text"]="O"
+            btn5["text"]="X"
             board.lastMove = "player2"
             sendData = '{}-{}'.format("4",board.lastMove).encode()
             clientSocket.send(sendData)
@@ -206,7 +206,7 @@ def clicked6():
     global finish,board
     if start and user and btn6["text"]==" ":   #For getting the text of a button
         if board.lastMove == player1:
-            btn6["text"]="O"
+            btn6["text"]="X"
             board.lastMove = "player2"
             sendData = '{}-{}'.format("5",board.lastMove).encode()
             clientSocket.send(sendData)
@@ -219,7 +219,7 @@ def clicked7():
     global finish,board
     if start and user and btn7["text"]==" ":   #For getting the text of a button
         if board.lastMove == player1:
-            btn7["text"]="O"
+            btn7["text"]="X"
             board.lastMove = "player2"
             sendData = '{}-{}'.format("6",board.lastMove).encode()
             clientSocket.send(sendData)
@@ -232,7 +232,7 @@ def clicked8():
     global finish,board
     if start and user and btn8["text"]==" ":   #For getting the text of a button
         if board.lastMove == player1:
-            btn8["text"]="O"
+            btn8["text"]="X"
             board.lastMove = "player2"
             sendData = '{}-{}'.format("7",board.lastMove).encode()
             clientSocket.send(sendData)
@@ -245,7 +245,7 @@ def clicked9():
     global finish,board
     if start and user and btn9["text"]==" ":   #For getting the text of a button
         if board.lastMove == player1:
-            btn9["text"]="O"
+            btn9["text"]="X"
             board.lastMove = "player2"
             sendData = '{}-{}'.format("8",board.lastMove).encode()
             clientSocket.send(sendData)
@@ -271,8 +271,8 @@ def gameOver():
     board.numGames = board.numGames - 1
     comData = board.computeStats()
     lblGames["text"] = comData["numGames"]
-    lblWon["text"] = comData["wins"]["O"]
-    lblLost["text"] = comData["loss"]["O"]
+    lblWon["text"] = comData["wins"]["X"]
+    lblLost["text"] = comData["loss"]["X"]
     lblTies["text"] = comData["ties"]
     lblTurn["text"] = "opponent"
     reset()
@@ -298,23 +298,23 @@ def resetStat():
 
 def updateBoard():
     if int(pos) == 0:
-        btn1["text"]="X"
+        btn1["text"]="O"
     elif int(pos) == 1:
-        btn2["text"]="X"
+        btn2["text"]="O"
     elif int(pos) == 2:
-        btn3["text"]="X"
+        btn3["text"]="O"
     elif int(pos) == 3:
-        btn4["text"]="X"
+        btn4["text"]="O"
     elif int(pos) == 4:
-        btn5["text"]="X"
+        btn5["text"]="O"
     elif int(pos) == 5:
-        btn6["text"]="X"
+        btn6["text"]="O"
     elif int(pos) == 6:
-        btn7["text"]="X"
+        btn7["text"]="O"
     elif int(pos) == 7:
-        btn8["text"]="X"
+        btn8["text"]="O"
     elif int(pos) == 8:
-        btn9["text"]="X"
+        btn9["text"]="O"
 
 
 btn1 = Button(leftFrame, text=" ",bg="yellow", fg="Black",width=8,height=3,font=('Times', 26),command=clicked1)
