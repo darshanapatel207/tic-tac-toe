@@ -3,7 +3,7 @@ class Board:
 
     def __init__(self,user2):
         self.board = [0,0,0,0,0,0,0,0,0]
-        self.user1 = "player1"
+        self.user1 = "player2"
         self.user2 = user2
         self.lastMove = ""
         self.numGames = 1
@@ -19,9 +19,9 @@ class Board:
         self.board = [0,0,0,0,0,0,0,0,0]
 
     def playMoveOnBoard(self,position,player):
-        if player == "player1":
+        if player == "player2":
             self.board[position] = "O"
-            self.lastMove = "player1"
+            self.lastMove = "player2"
         else:
             self.board[position] = "X"
             self.lastMove = self.user2

@@ -5,14 +5,25 @@ import gameboard as gb
 
 from tkinter import *
 from tkinter import messagebox
-from tkinter import simpledialog
 
-#Define my socket address information
-serverAddress = None
-serverPort = None
 
-#create a socket object on my server
-connectionSocket = None
+# using the loopback address as my server IP address
+serverAddress = '127.0.0.1'
+
+# define a port number for my server
+port = 8000
+
+# create a socket object on my server
+serverSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+
+# bind my host with my port number
+serverSocket.bind((serverAddress,port))
+
+# setup my socket using listen function
+# 1 designates the max number of connections my socket
+serverSocket.listen(1)
+
+clientSocket,clientAddress = None,None
 
 start = False
 user = False
@@ -20,103 +31,85 @@ player1 = ""
 board = None
 pos = 0
 finish = False
-username = ""
-isCon = False
-close = False
 
 def createThread(con):
     thread = threading.Thread(target=con)
     thread.daemon = True
     thread.start()
 
+def receive():
+    global start,user,player1,board
+    while True:     
+        if start and not user:
+            try:
+                data,addr = clientSocket.recvfrom(1024)
+                name = data.decode()
+                print(data)
+                board = gb.Board(name)
+                player1 = name
+                sendData = '{}'.format("player2").encode()
+                clientSocket.send(sendData)
+                user = True
+            except:
+                pass
+            
 
 def receiveMove():
-    global pos,start,user
-    while True:  
-        if isCon and start and user:
+    global pos,start
+    while True:
+        if start and user:
             try:
-                data,addr = connectionSocket.recvfrom(1024)
+                data,addr = clientSocket.recvfrom(1024)
                 data = data.decode()
-                print(data)    
-                if data != "":     
+                print(data)
+                if data == "Play Again":              
+                    reset()
+                elif data == "Fun Times":               
+                    gameOver()                         
+                else:
                     pos,board.lastMove = data.split("-")
                     board.playMoveOnBoard(int(pos),board.lastMove)
                     updateBoard()
                     lblTurn["text"] = "You"
                     play()
             except:
-                lblTurn["text"] = "you"
                 pass
-        
-
-def receive():
-    global start,user,board,username,player1,connectionSocket,isCon,close
-    while True:
-        if isCon:
-            if (not start or not user):
-                data,addr = connectionSocket.recvfrom(1024)
-                data = data.decode()
-                print(data)
-                if data == "Not accepted":
-                    isCon = True
-                    connectionSocket.close()
-                elif data == "accepted":
-                    username = simpledialog.askstring("Input", "Enter your name?",parent=window)
-                    #username = "maneesha"
-                    sendData = '{}'.format(username).encode()
-                    connectionSocket.send(sendData)
-                    lblUsername["text"] = username
-                    print(sendData)
-                    start = True   
-                    close = False            
-                elif data == "player1": 
-                    player1 = data              
-                    board = gb.Board(username)
-                    board.lastMove = player1
-                    user = True
-                    break
 
 
-def clickConnect():
-    global serverAddress,serverPort,connectionSocket,isCon
-    if not isCon:
-        serverAddress = simpledialog.askstring("Input", "What is host name/ip address?",parent=window)
-        serverPort = simpledialog.askstring("Input", "What is the port?",parent=window)
-        if serverAddress != "" and serverPort != "":
-            try:
-                connectionSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-                connectionSocket.connect((serverAddress,int(serverPort)))
-                isCon = True
-                lblTurn["text"] = "You"
-                lblGames["text"] = " "
-                lblWon["text"] = " "
-                lblLost["text"] = " "
-                lblTies["text"] = " "
-                lblUsername["text"] = " "
-                try:
-                    receive()
-                except Exception:
-                    isCon = False
-                    messagebox.showerror("Error", "Host rejected to connect!")
-            except Exception:
-                messagebox.showerror("Error", "Invalid hostname or port!")
-        else:
-            messagebox.showerror("Error", "Invalid hostname or port!")
- 
 
+def acceptConnection():
+    print("Thread created")
+    global clientSocket,clientAddress,start
+    clientSocket,clientAddress = serverSocket.accept()
+    message = "Incoming play request from "+str(clientAddress)+" client?"
+    answer = messagebox.askyesno("Question",message)
+    if answer:
+        sendData = '{}'.format("accepted").encode()
+        clientSocket.send(sendData)
+        start = True
+        reset()
+        resetStat()
+        print(sendData)
+        print("Client connected from: ",clientAddress)
+        receive()
+    else:
+        sendData = '{}'.format("Not accepted").encode()
+        clientSocket.send(sendData)
+        clientSocket.close()
+        print("Client socket closes")
+    
 def clickQuit():
     if start or user:
-        connectionSocket.close()
-    window.destroy()
+        serverSocket.close()
+    window.destroy()    
 
-
+createThread(acceptConnection)
 createThread(receiveMove)
 
 
 window=Tk()
-window.title("TiC-Tac-Toe Player2")
-window.geometry("930x650+0+0")
-window.resizable(width=False, height=False)
+window.title("TiC-Tac-Toe player2")
+window.geometry("920x650+0+0")
 window.configure(background = 'Cadet Blue')
 
 tops = Frame(window, bg ='Cadet Blue', pady =2, width = 1350, height=100, relief = RIDGE)
@@ -144,155 +137,147 @@ rightFrame3=Frame(rightFrame ,bd=10, width=560, height=150, padx=10, pady=2, bg=
 rightFrame3.grid(row=2, column=0)
 
 
-
 def clicked1():
     global finish,board
     if start and user and btn1["text"]==" ":   #For getting the text of a button
         if board.lastMove == player1:
-            btn1["text"]="X"
-            board.lastMove = username
+            btn1["text"]="O"
+            board.lastMove = "player2"
             sendData = '{}-{}'.format("0",board.lastMove).encode()
-            connectionSocket.send(sendData)
+            clientSocket.send(sendData)
             board.playMoveOnBoard(0,board.lastMove)
             lblTurn["text"] = "opponent"
-            print(sendData)   
+            print(sendData)
             play()
-        
+
 def clicked2():
     global finish,board
     if start and user and btn2["text"]==" ":   #For getting the text of a button
         if board.lastMove == player1:
-            btn2["text"]="X"
-            board.lastMove = username
+            btn2["text"]="O"
+            board.lastMove = "player2"
             sendData = '{}-{}'.format("1",board.lastMove).encode()
-            connectionSocket.send(sendData)
+            clientSocket.send(sendData)
             board.playMoveOnBoard(1,board.lastMove)
             lblTurn["text"] = "opponent"
-            print(sendData)    
+            print(sendData)
             play()
 
 def clicked3():
     global finish,board
     if start and user and btn3["text"]==" ":   #For getting the text of a button
         if board.lastMove == player1:
-            btn3["text"]="X"
-            board.lastMove = username
+            btn3["text"]="O"
+            board.lastMove = "player2"
             sendData = '{}-{}'.format("2",board.lastMove).encode()
-            connectionSocket.send(sendData)
+            clientSocket.send(sendData)
             board.playMoveOnBoard(2,board.lastMove)
             lblTurn["text"] = "opponent"
-            print(sendData)    
+            print(sendData)
             play()
 
 def clicked4():
     global finish,board
     if start and user and btn4["text"]==" ":   #For getting the text of a button
         if board.lastMove == player1:
-            btn4["text"]="X"
-            board.lastMove = username
+            btn4["text"]="O"
+            board.lastMove = "player2"
             sendData = '{}-{}'.format("3",board.lastMove).encode()
-            connectionSocket.send(sendData)
+            clientSocket.send(sendData)
             board.playMoveOnBoard(3,board.lastMove)
             lblTurn["text"] = "opponent"
-            print(sendData)    
+            print(sendData)
             play()
 
 def clicked5():
     global finish,board
     if start and user and btn5["text"]==" ":   #For getting the text of a button
         if board.lastMove == player1:
-            btn5["text"]="X"
-            board.lastMove = username
+            btn5["text"]="O"
+            board.lastMove = "player2"
             sendData = '{}-{}'.format("4",board.lastMove).encode()
-            connectionSocket.send(sendData)
+            clientSocket.send(sendData)
             board.playMoveOnBoard(4,board.lastMove)
             lblTurn["text"] = "opponent"
-            print(sendData)     
+            print(sendData)
             play()
 
 def clicked6():
     global finish,board
     if start and user and btn6["text"]==" ":   #For getting the text of a button
         if board.lastMove == player1:
-            btn6["text"]="X"
-            board.lastMove = username
+            btn6["text"]="O"
+            board.lastMove = "player2"
             sendData = '{}-{}'.format("5",board.lastMove).encode()
-            connectionSocket.send(sendData)
+            clientSocket.send(sendData)
             board.playMoveOnBoard(5,board.lastMove)
             lblTurn["text"] = "opponent"
-            print(sendData)   
+            print(sendData)
             play()
 
 def clicked7():
     global finish,board
     if start and user and btn7["text"]==" ":   #For getting the text of a button
         if board.lastMove == player1:
-            btn7["text"]="X"
-            board.lastMove = username
+            btn7["text"]="O"
+            board.lastMove = "player2"
             sendData = '{}-{}'.format("6",board.lastMove).encode()
-            connectionSocket.send(sendData)
+            clientSocket.send(sendData)
             board.playMoveOnBoard(6,board.lastMove)
             lblTurn["text"] = "opponent"
-            print(sendData)  
+            print(sendData)
             play()
 
 def clicked8():
     global finish,board
     if start and user and btn8["text"]==" ":   #For getting the text of a button
         if board.lastMove == player1:
-            btn8["text"]="X"
-            board.lastMove = username
+            btn8["text"]="O"
+            board.lastMove = "player2"
             sendData = '{}-{}'.format("7",board.lastMove).encode()
-            connectionSocket.send(sendData)
+            clientSocket.send(sendData)
             board.playMoveOnBoard(7,board.lastMove)
             lblTurn["text"] = "opponent"
-            print(sendData)    
+            print(sendData)
             play()
 
 def clicked9():
     global finish,board
     if start and user and btn9["text"]==" ":   #For getting the text of a button
         if board.lastMove == player1:
-            btn9["text"]="X"
-            board.lastMove = username
+            btn9["text"]="O"
+            board.lastMove = "player2"
             sendData = '{}-{}'.format("8",board.lastMove).encode()
-            connectionSocket.send(sendData)
+            clientSocket.send(sendData)
             board.playMoveOnBoard(8,board.lastMove)
             lblTurn["text"] = "opponent"
-            print(sendData)    
+            print(sendData)
             play()
 
 
 def play():
-    global isCon,start,user,close
     finish,won = board.isGameFinished()
     if finish:
-        answer = messagebox.askyesno("Question","Do you want to play again?")
-        if answer:
-            sendData = '{}'.format("Play Again").encode()
-            connectionSocket.send(sendData)
-            board.recordGamePlayed()
-            reset()
-        else:
-            isCon = False
-            sendData = '{}'.format("Fun Times").encode()
-            connectionSocket.send(sendData)
-            connectionSocket.close()
-            start = False
-            user = False
-            close = True
-            comData = board.computeStats()
-            lblGames["text"] = comData["numGames"]
-            lblWon["text"] = comData["wins"]["X"]
-            lblLost["text"] = comData["loss"]["X"]
-            lblTies["text"] = comData["ties"]
-            lblTurn["text"] = "You"
-            reset()
-            
+        board.recordGamePlayed()
+        board.resetGameBoard()
+        board.lastMove = "player2"
+        
+def gameOver():
+    isCon = False
+    start = False
+    user = False
+    close = True
+    clientSocket.close()
+    board.numGames = board.numGames - 1
+    comData = board.computeStats()
+    lblGames["text"] = comData["numGames"]
+    lblWon["text"] = comData["wins"]["O"]
+    lblLost["text"] = comData["loss"]["O"]
+    lblTies["text"] = comData["ties"]
+    lblTurn["text"] = "opponent"
+    reset()
 
 def reset():
-    board.resetGameBoard()
-    board.lastMove = player1
     btn1["text"]=" "
     btn2["text"]=" "
     btn3["text"]=" "
@@ -302,27 +287,35 @@ def reset():
     btn7["text"]=" "
     btn8["text"]=" "
     btn9["text"]=" "
-    
+
+
+def resetStat():
+    lblTurn["text"] = "opponent"
+    lblGames["text"] = " "
+    lblWon["text"] = " "
+    lblLost["text"] = " "
+    lblTies["text"] = " "  
 
 def updateBoard():
     if int(pos) == 0:
-        btn1["text"]="O"
+        btn1["text"]="X"
     elif int(pos) == 1:
-        btn2["text"]="O"
+        btn2["text"]="X"
     elif int(pos) == 2:
-        btn3["text"]="O"
+        btn3["text"]="X"
     elif int(pos) == 3:
-        btn4["text"]="O"
+        btn4["text"]="X"
     elif int(pos) == 4:
-        btn5["text"]="O"
+        btn5["text"]="X"
     elif int(pos) == 5:
-        btn6["text"]="O"
+        btn6["text"]="X"
     elif int(pos) == 6:
-        btn7["text"]="O"
+        btn7["text"]="X"
     elif int(pos) == 7:
-        btn8["text"]="O"
+        btn8["text"]="X"
     elif int(pos) == 8:
-        btn9["text"]="O"
+        btn9["text"]="X"
+
 
 btn1 = Button(leftFrame, text=" ",bg="yellow", fg="Black",width=8,height=3,font=('Times', 26),command=clicked1)
 btn1.grid(column=1, row=1, sticky = S+N+E+W)
@@ -343,37 +336,34 @@ btn8.grid(column=2, row=3, sticky = S+N+E+W)
 btn9 = Button(leftFrame, text=" ",bg="yellow", fg="Black",width=8,height=3,font=('Times', 26),command=clicked9)
 btn9.grid(column=3, row=3, sticky = S+N+E+W)
 
-btnConnect=Button(rightFrame3, text="Connect", font=('arial', 17, 'bold'), height = 1, width =20,command=clickConnect)
-btnConnect.grid (row=2, column=0 ,padx=6, pady=11)
 
-btnQuit=Button (rightFrame3, text="Quit", font=('arial', 17, 'bold'), height = 1, width =20, command = clickQuit) 
-btnQuit.grid(row=3, column=0 ,padx=6, pady=10)
+btnQuit=Button (rightFrame3, text="Quit", font=('arial', 20, 'bold'), height = 1, width =15,command = clickQuit) 
+btnQuit.grid(row=2, column=1 ,padx=6, pady=10)
 
 lbl=Label(rightFrame2, font=('arial', 20, 'bold'), text="Games:",padx=2, pady=2, bg="Cadet Blue") 
 lbl.grid (row=0, column=0, sticky=W)
-lblGames=Label(rightFrame2, font=('arial', 20, 'bold'), text=" ",padx=2, pady=2, bg="Cadet Blue",width=10) 
+lblGames=Label(rightFrame2, font=('arial', 20, 'bold'), text=" ",padx=2, pady=2, bg="Cadet Blue",width=8) 
 lblGames.grid (row=0, column=1, sticky=W)
 lbl=Label(rightFrame2, font=('arial', 20, 'bold'), text="Won:",padx=2, pady=2, bg="Cadet Blue") 
 lbl.grid (row=1, column=0, sticky=W)
-lblWon=Label(rightFrame2, font=('arial', 20, 'bold'), text=" ",padx=2, pady=2, bg="Cadet Blue",width=10) 
+lblWon=Label(rightFrame2, font=('arial', 20, 'bold'), text=" ",padx=2, pady=2, bg="Cadet Blue",width=8) 
 lblWon.grid (row=1, column=1, sticky=W)
 lbl=Label(rightFrame2, font=('arial', 20, 'bold'), text="Lost:",padx=2, pady=2, bg="Cadet Blue") 
 lbl.grid (row=2, column=0, sticky=W)
-lblLost=Label(rightFrame2, font=('arial', 20, 'bold'), text=" ",padx=2, pady=2, bg="Cadet Blue",width=10) 
+lblLost=Label(rightFrame2, font=('arial', 20, 'bold'), text=" ",padx=2, pady=2, bg="Cadet Blue",width=8) 
 lblLost.grid (row=2, column=1, sticky=W)
 lbl=Label(rightFrame2, font=('arial', 20, 'bold'), text="Ties:",padx=2, pady=2, bg="Cadet Blue") 
 lbl.grid (row=3, column=0, sticky=W)
-lblTies=Label(rightFrame2, font=('arial', 20, 'bold'), text=" ",padx=2, pady=2, bg="Cadet Blue",width=10) 
+lblTies=Label(rightFrame2, font=('arial', 20, 'bold'), text=" ",padx=2, pady=2, bg="Cadet Blue",width=8) 
 lblTies.grid (row=3, column=1, sticky=W)
 
-lbl=Label(rightFrame1, font=('arial', 20, 'bold'), text="Player2:",padx=2, pady=2, bg="Cadet Blue") 
+lbl=Label(rightFrame1, font=('arial', 20, 'bold'), text="Host:",padx=2, pady=2, bg="Cadet Blue") 
 lbl.grid (row=0, column=0, sticky=W)
-lblUsername=Label(rightFrame1, font=('arial', 20, 'bold'), text="",padx=2, pady=2, bg="Cadet Blue",width=10) 
+lblUsername=Label(rightFrame1, font=('arial', 20, 'bold'), text="player2",padx=2, pady=2, bg="Cadet Blue",width=10) 
 lblUsername.grid (row=0, column=1, sticky=W)
 lbl=Label(rightFrame1, font=('arial', 20, 'bold'), text="Turn: ",padx=2, pady=2, bg="Cadet Blue") 
 lbl.grid (row=1, column=0, sticky=W)
-lblTurn=Label(rightFrame1, font=('arial', 20, 'bold'), text="You",padx=2, pady=2, bg="Cadet Blue",width=10) 
+lblTurn=Label(rightFrame1, font=('arial', 20, 'bold'), text="opponent",padx=2, pady=2, bg="Cadet Blue",width=10) 
 lblTurn.grid (row=1, column=1, sticky=W)
-
 
 window.mainloop()
